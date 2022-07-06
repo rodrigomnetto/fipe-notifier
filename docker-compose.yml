@@ -1,0 +1,17 @@
+version: '3.4'
+
+services:
+  fipenotifier:
+    image: ${DOCKER_REGISTRY-}fipenotifier
+    build:
+      context: .
+      dockerfile: FipeNotifier/Dockerfile
+    environment:
+      - ASPNETCORE_URLS=http://*:5001
+    ports:
+      - "5001:5001"
+  mongo:
+    image: mongo
+    restart: always
+    ports:
+      - "5000:27017"
