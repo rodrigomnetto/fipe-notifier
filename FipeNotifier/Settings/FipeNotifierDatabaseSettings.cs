@@ -1,4 +1,4 @@
-﻿namespace FipeNotifier
+﻿namespace FipeNotifier.Settings
 {
     public class FipeNotifierDatabaseSettings
     {

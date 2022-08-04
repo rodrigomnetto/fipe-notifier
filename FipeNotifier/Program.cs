@@ -1,18 +1,28 @@
 using FipeNotifier;
+using FipeNotifier.Settings;
 using Microsoft.AspNetCore.Mvc;
+using Serilog;
+using Serilog.Events;
 
 var builder = WebApplication.CreateBuilder(args);
 
-// Add services to the container.
-// Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
+builder.Host.UseSerilog((ctx, lc) => lc
+    .WriteTo.File("logs/log.txt")
+    .MinimumLevel.Is(LogEventLevel.Warning));
+
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 
 builder.Services.Configure<FipeNotifierDatabaseSettings>(
     builder.Configuration.GetSection("FipeNotifierDatabase"));
+builder.Services.Configure<EmailServiceSettings>(
+    builder.Configuration.GetSection("EmailService"));
+builder.Services.Configure<FipeClientSettings>(
+    builder.Configuration.GetSection("FipeClient"));
 
-builder.Services.AddHttpClient();
+builder.Services.AddHostedService<NotificationsHostedService>();
 
+builder.Services.AddHttpClient<FipeApiClient>();
 
 builder.Services.AddScoped<IFipeApiClient, FipeApiClient>();
 builder.Services.AddScoped<INotificationService, NotificationService>();
@@ -42,22 +52,25 @@ app.MapGet("/brands/{brandCode}/models/{modelCode}/years", async (string brandCo
 app.MapGet("/notifications", async (string email
     , [FromServices] INotificationService notificationService) => {
 
-    return await notificationService.GetNotifications(email);
-});
+    var result = await notificationService.GetNotifications(email);
+    return result.Any() ? Results.Ok(result) : Results.NoContent();
+    });
 
 app.MapPost("/notifications", async (Notify notify
     , [FromServices] IFipeApiClient fipeClient
     , [FromServices] INotificationService notificationService) => {
 
-    var carValue = await fipeClient.GetCarValueBy(notify.BrandCode, notify.ModelCode, notify.YearCode);
-    return await notificationService.RegisterNotification(notify, carValue);
+    var price = await fipeClient.GetPriceBy(notify.BrandCode, notify.ModelCode, notify.YearCode);
+    return await notificationService.RegisterNotification(notify, price);
 });
 
-app.MapDelete("/notifications/{id}", async (string id
-    , [FromServices] INotificationService notificationService) => {
+app.MapDelete("/notifications/{id}",
+    async (string id, [FromServices] INotificationService notificationService) => {
 
-    return await notificationService.DeleteNotification(id);
-});
+        var result = await notificationService.DeleteNotification(id);
+        return result ? Results.Ok() : Results.NoContent();
+    }
+);
 
 app.Run();
 

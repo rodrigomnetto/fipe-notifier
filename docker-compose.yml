@@ -8,6 +8,14 @@ services:
       dockerfile: FipeNotifier/Dockerfile
     environment:
       - ASPNETCORE_URLS=http://*:5001
+      - FipeNotifierDatabase__ConnectionString=${FIPE_NOTIFIER_CONNECTION_STRING}
+      - FipeNotifierDatabase__DatabaseName=${FIPE_NOTIFIER_DATABASE}
+      - FipeNotifierDatabase__NotificationsCollectionName=${FIPE_NOTIFIER_NOTIFICATIONS_COLLECTION}
+      - EmailService__Host=${EMAIL_SERVICE_HOST}
+      - EmailService__Port=${EMAIL_SERVICE_PORT}
+      - EmailService__Username=${EMAIL_SERVICE_USERNAME}
+      - EmailService__Password=${EMAIL_SERVICE_PASSWORD}
+      - FipeClient__BaseAddress=${FIPE_CLIENT_BASE_ADDRESS}
     ports:
       - "5001:5001"
   mongo:
